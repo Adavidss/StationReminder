@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>StationReminder</title>
-  <meta name="description" content="Get a ding when you approach your DC Metro station — powered by iOS Shortcuts arrive automations.">
+  <meta name="description" content="Get a ding when you approach your DC Metro station or bus stop — powered by iOS Shortcuts arrive automations.">
   <meta name="theme-color" content="#BF0D3E">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
@@ -17,52 +17,99 @@
 <body>
   <header class="app-header">
     <h1>StationReminder</h1>
-    <p class="tagline">Your iPhone dings when you approach your Metro station — even in your pocket.</p>
+    <p class="tagline">Your iPhone dings when you approach your Metro station or bus stop — even in your pocket.</p>
     <p class="progress" id="progress" hidden></p>
   </header>
 
   <main>
-    <!-- List view -->
-    <section id="list-view">
+    <!-- ============ PICKER ============ -->
+    <section id="picker-view">
+      <div class="tabs" role="tablist">
+        <button class="tab" id="tab-rail" role="tab" aria-selected="true" type="button">🚇 Rail</button>
+        <button class="tab" id="tab-bus" role="tab" aria-selected="false" type="button">🚌 Bus</button>
+      </div>
+
+      <!-- rail controls -->
+      <div class="controls card" id="rail-controls">
+        <div class="search-wrap">
+          <input type="search" id="rail-search" placeholder="Find a station…" autocomplete="off" aria-label="Search stations">
+          <ul class="search-drop" id="rail-drop" hidden></ul>
+        </div>
+        <div class="chips" id="chips" role="group" aria-label="Highlight a line"></div>
+        <p class="hint">Tap a line to see it on the map, then <strong>tap stations to select them</strong> — pick as many as you like.</p>
+      </div>
+
+      <!-- bus controls -->
+      <div class="controls card" id="bus-controls" hidden>
+        <div class="search-wrap">
+          <input type="search" id="bus-search" placeholder="Route (e.g. A70, C51) or stop name…" autocomplete="off" aria-label="Search routes or stops">
+          <ul class="search-drop" id="bus-drop" hidden></ul>
+        </div>
+        <div class="chips" id="bus-route-chips" role="group" aria-label="Matched routes"></div>
+        <p class="hint" id="bus-hint">Pick a route to draw it with its stops — or zoom the map in to see all stops around you. Tap stops to select.</p>
+      </div>
+
+      <div class="card map-card">
+        <div id="picker-map" aria-label="Map for picking stations and stops"></div>
+        <p class="map-note" id="picker-offline" hidden>Map tiles need internet — search and your saved reminders still work offline.</p>
+      </div>
+
       <details class="card how-card" id="how-card" open>
         <summary>How this works</summary>
         <ol class="how-steps">
-          <li>Pick a station below.</li>
-          <li>Follow the steps to create a <strong>“When I arrive” automation</strong> in the Shortcuts app (~2 minutes, one time per station).</li>
-          <li>Done. iOS watches the geofence in the background and dings + announces the station when you get close — no app needs to be open.</li>
+          <li>Tap stations or bus stops on the map and hit <strong>Set up</strong>.</li>
+          <li>For each one, follow the steps to create a <strong>“When I arrive” automation</strong> in the Shortcuts app (~2 minutes, one time per place).</li>
+          <li>Done. iOS watches the geofences in the background and dings + announces the place when you get close — no app needs to be open.</li>
         </ol>
-        <p class="how-note">First time? <button class="linklike" id="open-test" type="button">Do a practice run near home</button> before trusting it at a station.</p>
-        <p class="how-note ding-note">Optional: <a href="./shortcut/StationReminder-Ding.shortcut" download>download the StationReminder&nbsp;Ding shortcut</a> (open the file, tap “Add Shortcut”). It gives every station the same ding + spoken announcement, editable in one place. The steps below also work without it.</p>
+        <p class="how-note">First time? <button class="linklike" id="open-test" type="button">Do a practice run near home</button> before trusting it on a commute.</p>
+        <p class="how-note ding-note">Optional: <a href="./shortcut/StationReminder-Ding.shortcut" download>download the StationReminder&nbsp;Ding shortcut</a> (open the file, tap “Add Shortcut”). It gives every reminder the same ding + spoken announcement, editable in one place. The steps also work without it.</p>
+        <p class="how-note">Heads-up: iOS shares a system pool of ~20 geofences across all location automations — set up the places you actually use, not the whole network.</p>
       </details>
 
-      <div class="controls card">
-        <input type="search" id="search" placeholder="Search stations…" autocomplete="off" aria-label="Search stations">
-        <div class="chips" id="chips" role="group" aria-label="Filter by line"></div>
-      </div>
-
-      <ul id="station-list" class="station-list" aria-label="Stations"></ul>
-      <p id="no-results" class="no-results" hidden>No stations match.</p>
+      <details class="card configured-card" id="configured-card" hidden>
+        <summary>Your reminders (<span id="configured-count">0</span>)</summary>
+        <ul class="configured-list" id="configured-list"></ul>
+      </details>
     </section>
 
-    <!-- Detail view -->
-    <section id="detail-view" hidden>
-      <button class="back" id="back" type="button">‹ All stations</button>
+    <!-- ============ WIZARD ============ -->
+    <section id="wizard-view" hidden>
+      <button class="back" id="wizard-back" type="button">‹ Back to map</button>
+      <p class="wizard-progress" id="wizard-progress" hidden></p>
+
       <div class="card detail-card">
         <div class="detail-head">
+          <span class="kind-badge" id="detail-kind"></span>
           <h2 id="detail-name"></h2>
           <span class="dots" id="detail-dots"></span>
         </div>
         <p class="address" id="detail-address"></p>
 
         <div id="map" aria-label="Map preview of the alert zone"></div>
-        <p class="map-note" id="map-offline" hidden>Map tiles need internet — station data and the steps below still work offline.</p>
+        <p class="map-note" id="map-offline" hidden>Map tiles need internet — the steps below still work offline.</p>
         <p class="map-note" id="test-hint" hidden>Tap the map to move the test pin.</p>
 
         <div class="radius-row">
           <label for="radius">Alert radius</label>
-          <input type="range" id="radius" min="200" max="1000" step="50" value="500">
+          <input type="range" id="radius" min="150" max="1000" step="50" value="500">
           <output id="radius-label" for="radius">500&nbsp;m</output>
         </div>
+
+        <div class="window-row">
+          <span class="window-label">Active</span>
+          <div class="segmented" id="window-seg" role="group" aria-label="When should this reminder be active">
+            <button type="button" data-win="any" aria-pressed="true">Any time</button>
+            <button type="button" data-win="am" aria-pressed="false">Mornings</button>
+            <button type="button" data-win="pm" aria-pressed="false">Evenings</button>
+            <button type="button" data-win="custom" aria-pressed="false">Custom</button>
+          </div>
+        </div>
+        <div class="window-custom" id="window-custom" hidden>
+          <input type="time" id="win-start" value="07:00" aria-label="Start time">
+          <span>–</span>
+          <input type="time" id="win-end" value="10:00" aria-label="End time">
+        </div>
+        <p class="window-note">It dings every time you arrive while active (leaving the area re-arms it).</p>
 
         <div class="coords-row">
           <code id="coords"></code>
@@ -77,22 +124,32 @@
           <summary>Using the Ding shortcut instead?</summary>
           <p id="alt-steps-body"></p>
         </details>
-        <p class="rearm-note">The ding fires once per arrival — leaving the area re-arms it automatically.</p>
         <label class="configured-toggle" id="configured-row">
           <input type="checkbox" id="configured">
-          <span>I’ve set this station up</span>
+          <span>I’ve set this reminder up</span>
         </label>
+        <div class="wizard-nav" id="wizard-nav" hidden>
+          <button type="button" id="wiz-prev">‹ Previous</button>
+          <button type="button" id="wiz-next" class="primary">Next ›</button>
+        </div>
       </div>
     </section>
   </main>
 
+  <!-- selection tray -->
+  <div class="tray" id="tray" hidden>
+    <div class="tray-chips" id="tray-chips"></div>
+    <button id="tray-go" type="button">Set up</button>
+  </div>
+
   <footer>
-    <p>Station data: <a href="https://opendata.dc.gov/datasets/e3896b58a4e741d48ddcda03dae9d21b/about" rel="noopener">Open Data DC</a> · Map: <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://leafletjs.com" rel="noopener">Leaflet</a></p>
+    <p>Data: <a href="https://opendata.dc.gov/datasets/e3896b58a4e741d48ddcda03dae9d21b/about" rel="noopener">Open Data DC</a> (stations, lines, bus stops &amp; routes) · Map: <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://leafletjs.com" rel="noopener">Leaflet</a></p>
     <p>Not affiliated with WMATA. Geofencing runs entirely on your iPhone via Shortcuts.</p>
   </footer>
 
   <script src="./vendor/leaflet/leaflet.js"></script>
   <script src="./js/stations.js"></script>
+  <script src="./js/rail_lines.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

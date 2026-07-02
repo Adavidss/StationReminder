@@ -1,6 +1,6 @@
 /* StationReminder service worker — app-shell precache, offline-first.
    Map tiles are deliberately never cached (OSM tile policy). */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = "stationreminder-" + VERSION;
 const SHELL = [
   "./",
@@ -8,6 +8,8 @@ const SHELL = [
   "./css/app.css",
   "./js/app.js",
   "./js/stations.js",
+  "./js/rail_lines.js",
+  "./data/bus.json",
   "./vendor/leaflet/leaflet.js",
   "./vendor/leaflet/leaflet.css",
   "./vendor/leaflet/images/marker-icon.png",

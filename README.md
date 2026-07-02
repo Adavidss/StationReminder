@@ -1,8 +1,10 @@
 # StationReminder
 
-Your iPhone dings (and speaks) when you approach your DC Metro station — even with the phone locked in your pocket. No app install, no accounts, no tracking.
+Your iPhone dings (and speaks) when you approach your DC Metro station **or bus stop** — even with the phone locked in your pocket. No app install, no accounts, no tracking.
 
-**How?** iOS Shortcuts *"When I arrive"* automations are Apple's built-in geofencing: they run in the background with the screen locked, for free. StationReminder is a small static web app that makes setting them up painless — pick any of the 98 WMATA Metrorail stations, preview the alert zone on a map, copy the coordinates, and follow steps with everything filled in. Setup is ~2 minutes per station, once.
+**How?** iOS Shortcuts *"When I arrive"* automations are Apple's built-in geofencing: they run in the background with the screen locked, for free. StationReminder is a small static web app that makes setting them up painless — tap stations or bus stops right on the map (all 98 Metrorail stations, plus 8,300 Metrobus stops across 126 current routes), preview the alert zone, pick a radius and an active time window, and follow steps with everything filled in. Select several at once (e.g. two stations on the Red Line) and the app walks you through them one by one. Setup is ~2 minutes per place, once.
+
+**Map views:** the Rail tab draws the six Metro lines — tap a line chip to zoom to it, then tap stations to select. The Bus tab draws any route with its stops (search by the new route codes like A70 or C51, or by stop name), or just zoom in anywhere to see nearby stops.
 
 ## Using it
 
@@ -33,6 +35,8 @@ Your iPhone dings (and speaks) when you approach your DC Metro station — even 
 Fully static, no build step. `python3 -m http.server` in the repo root to run locally.
 
 - `tools/fetch_stations.py` — regenerates `js/stations.js` from Open Data DC (run only if WMATA opens/renames a station)
+- `tools/fetch_rail_lines.py` — regenerates `js/rail_lines.js` (simplified line polylines)
+- `tools/fetch_bus_data.py` — regenerates `data/bus.json` (routes + stops; derives stop↔route links spatially since the stops layer has none)
 - `tools/build_shortcut.sh` — re-signs `shortcut/StationReminder-Ding.shortcut` from the committed XML plist (macOS only)
 - `tools/make_icons.py` — regenerates PWA icons (needs Pillow)
 
