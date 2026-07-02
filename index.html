@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>StationReminder</title>
+  <meta name="description" content="Get a ding when you approach your DC Metro station — powered by iOS Shortcuts arrive automations.">
+  <meta name="theme-color" content="#BF0D3E">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="StationReminder">
+  <link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>StationReminder</h1>
+    <p class="tagline">Your iPhone dings when you approach your Metro station — even in your pocket.</p>
+    <p class="progress" id="progress" hidden></p>
+  </header>
+
+  <main>
+    <!-- List view -->
+    <section id="list-view">
+      <details class="card how-card" id="how-card" open>
+        <summary>How this works</summary>
+        <ol class="how-steps">
+          <li>Pick a station below.</li>
+          <li>Follow the steps to create a <strong>“When I arrive” automation</strong> in the Shortcuts app (~2 minutes, one time per station).</li>
+          <li>Done. iOS watches the geofence in the background and dings + announces the station when you get close — no app needs to be open.</li>
+        </ol>
+        <p class="how-note">First time? <button class="linklike" id="open-test" type="button">Do a practice run near home</button> before trusting it at a station.</p>
+        <p class="how-note ding-note">Optional: <a href="./shortcut/StationReminder-Ding.shortcut" download>download the StationReminder&nbsp;Ding shortcut</a> (open the file, tap “Add Shortcut”). It gives every station the same ding + spoken announcement, editable in one place. The steps below also work without it.</p>
+      </details>
+
+      <div class="controls card">
+        <input type="search" id="search" placeholder="Search stations…" autocomplete="off" aria-label="Search stations">
+        <div class="chips" id="chips" role="group" aria-label="Filter by line"></div>
+      </div>
+
+      <ul id="station-list" class="station-list" aria-label="Stations"></ul>
+      <p id="no-results" class="no-results" hidden>No stations match.</p>
+    </section>
+
+    <!-- Detail view -->
+    <section id="detail-view" hidden>
+      <button class="back" id="back" type="button">‹ All stations</button>
+      <div class="card detail-card">
+        <div class="detail-head">
+          <h2 id="detail-name"></h2>
+          <span class="dots" id="detail-dots"></span>
+        </div>
+        <p class="address" id="detail-address"></p>
+
+        <div id="map" aria-label="Map preview of the alert zone"></div>
+        <p class="map-note" id="map-offline" hidden>Map tiles need internet — station data and the steps below still work offline.</p>
+        <p class="map-note" id="test-hint" hidden>Tap the map to move the test pin.</p>
+
+        <div class="radius-row">
+          <label for="radius">Alert radius</label>
+          <input type="range" id="radius" min="200" max="1000" step="50" value="500">
+          <output id="radius-label" for="radius">500&nbsp;m</output>
+        </div>
+
+        <div class="coords-row">
+          <code id="coords"></code>
+          <button id="copy" type="button">Copy</button>
+        </div>
+      </div>
+
+      <div class="card steps-card">
+        <h3>Set up the automation</h3>
+        <ol class="setup-steps" id="setup-steps"></ol>
+        <details class="alt-steps">
+          <summary>Using the Ding shortcut instead?</summary>
+          <p id="alt-steps-body"></p>
+        </details>
+        <p class="rearm-note">The ding fires once per arrival — leaving the area re-arms it automatically.</p>
+        <label class="configured-toggle" id="configured-row">
+          <input type="checkbox" id="configured">
+          <span>I’ve set this station up</span>
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Station data: <a href="https://opendata.dc.gov/datasets/e3896b58a4e741d48ddcda03dae9d21b/about" rel="noopener">Open Data DC</a> · Map: <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a> · <a href="https://leafletjs.com" rel="noopener">Leaflet</a></p>
+    <p>Not affiliated with WMATA. Geofencing runs entirely on your iPhone via Shortcuts.</p>
+  </footer>
+
+  <script src="./vendor/leaflet/leaflet.js"></script>
+  <script src="./js/stations.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
