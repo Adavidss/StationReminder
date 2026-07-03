@@ -38,6 +38,7 @@
     busDrop: $("bus-drop"),
     busRouteChips: $("bus-route-chips"),
     busHint: $("bus-hint"),
+    sideList: $("side-list"),
     chips: $("chips"),
     pickerOffline: $("picker-offline"),
     tray: $("tray"),
@@ -77,6 +78,7 @@
   let store = loadStore();
   let tab = "rail";
   let activeLine = null;
+  let railQuery = "";
   let activeRouteIdx = null;
   let busData = null; // { routes: [...], stops: [{id,name,lat,lon,routes}] }
   let busLoading = false;
@@ -323,6 +325,7 @@
       const stop = busData && busData.stopById[id];
       if (stop && busMarkers[id]) busMarkers[id].setStyle(busMarkerStyle(stop));
     });
+    renderSideList(); // selection/configured state shows in the side list too
   }
 
   function highlightLine(line) {
@@ -379,7 +382,7 @@
         busData = { routes: raw.routes, stops: stops, stopById: stopById };
         busLoading = false;
         defaultBusHint();
-        if (tab === "bus") renderBusStops();
+        if (tab === "bus") { renderBusStops(); renderSideList(); }
       })
       .catch(() => {
         busLoading = false;
@@ -411,6 +414,7 @@
     }
     renderBusRouteChips();
     renderBusStops();
+    renderSideList();
   }
 
   function renderBusRouteChips(matches) {
@@ -457,6 +461,52 @@
       busStopLayer.addLayer(mk);
       busMarkers[s.id] = mk;
     });
+  }
+
+  // ---------------- side list (wide screens) ----------------
+  function renderSideList() {
+    const ul = els.sideList;
+    ul.innerHTML = "";
+    const addEmpty = (msg) => {
+      const li = document.createElement("li");
+      li.className = "side-empty";
+      li.textContent = msg;
+      ul.appendChild(li);
+    };
+    const addRow = (label, trailingHtml, item, zoomTo) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "side-item";
+      b.setAttribute("aria-pressed", String(selection.some((s) => s.key === keyFor(item))));
+      b.innerHTML =
+        '<span class="name">' + esc(label) + "</span>" + trailingHtml +
+        (isConfigured(item) ? '<span class="check">✓</span>' : "");
+      b.addEventListener("click", () => {
+        toggleSelect(item);
+        if (pMap.getZoom() < zoomTo) pMap.flyTo([item.lat, item.lon], zoomTo, { duration: 0.6 });
+        else pMap.panTo([item.lat, item.lon]);
+      });
+      li.appendChild(b);
+      ul.appendChild(li);
+    };
+
+    if (tab === "rail") {
+      const list = STATIONS.filter((st) =>
+        (!activeLine || st.lines.includes(activeLine)) &&
+        (!railQuery || st.name.toLowerCase().includes(railQuery))
+      );
+      if (!list.length) { addEmpty("No stations match."); return; }
+      list.forEach((st) =>
+        addRow(st.name, '<span class="dots">' + dotsHtml(st.lines) + "</span>", railItem(st), 13)
+      );
+    } else {
+      if (!busData) { addEmpty(busLoading ? "Loading bus network…" : "Bus network unavailable."); return; }
+      if (activeRouteIdx === null) { addEmpty("Pick a route above to list its stops here — or tap them on the map."); return; }
+      busData.stops
+        .filter((s) => s.routes.includes(activeRouteIdx))
+        .forEach((s) => addRow(s.name.replace(/\+/g, " @ "), "", busItem(s), 15));
+    }
   }
 
   // ---------------- search ----------------
@@ -795,6 +845,11 @@
   els.tabRail.addEventListener("click", () => setTab("rail"));
   els.tabBus.addEventListener("click", () => setTab("bus"));
 
+  els.railSearch.addEventListener("input", () => {
+    railQuery = els.railSearch.value.trim().toLowerCase();
+    renderSideList();
+  });
+
   function setTab(t) {
     tab = t;
     els.tabRail.setAttribute("aria-selected", String(t === "rail"));
@@ -815,6 +870,7 @@
       loadBusData();
       renderBusStops();
     }
+    renderSideList();
   }
 
   els.trayGo.addEventListener("click", () => {
@@ -931,6 +987,7 @@
   // ---------------- boot ----------------
   renderLineChips();
   ensurePickerMap();
+  renderSideList();
   setupRailSearch();
   setupBusSearch();
   renderProgress();

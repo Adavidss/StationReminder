@@ -1,6 +1,6 @@
 /* StationReminder service worker — app-shell precache, offline-first.
    Map tiles are deliberately never cached (OSM tile policy). */
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = "stationreminder-" + VERSION;
 const SHELL = [
   "./",
@@ -44,6 +44,20 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (url.hostname === "tile.openstreetmap.org") return; // network-only
   if (url.origin !== location.origin) return;
+  if (e.request.mode === "navigate") {
+    // network-first for page loads so new deploys show up immediately;
+    // cached shell only as the offline fallback
+    e.respondWith(
+      fetch(e.request)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put("./index.html", copy)).catch(() => {});
+          return resp;
+        })
+        .catch(() => caches.match("./index.html", { ignoreSearch: true }))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request))
   );
