@@ -1,6 +1,6 @@
 /* StationReminder service worker — app-shell precache, offline-first.
    Map tiles are deliberately never cached (OSM tile policy). */
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = "stationreminder-" + VERSION;
 const SHELL = [
   "./",

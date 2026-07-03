@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
-"""One-time icon generation: geofence rings + center dot on WMATA red."""
+"""One-time icon generation: minimal black & white geofence mark."""
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 OUT = Path(__file__).resolve().parent.parent / "icons"
-RED = (191, 13, 62, 255)  # #BF0D3E
+BLACK = (0, 0, 0, 255)
 WHITE = (255, 255, 255, 255)
-RING = (255, 255, 255, 110)
 
 
 def draw_icon(size):
-    img = Image.new("RGBA", (size, size), RED)
+    img = Image.new("RGBA", (size, size), BLACK)
     d = ImageDraw.Draw(img)
     cx = cy = size / 2
-    # outer geofence rings
-    for frac, width_frac in ((0.36, 0.028), (0.26, 0.032)):
-        r = size * frac
-        w = max(2, int(size * width_frac))
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=RING, width=w)
-    # center dot
-    r = size * 0.13
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=WHITE)
+    # one bold geofence ring
+    r = size * 0.30
+    w = max(2, round(size * 0.055))
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=WHITE, width=w)
+    # solid center dot
+    rd = size * 0.115
+    d.ellipse([cx - rd, cy - rd, cx + rd, cy + rd], fill=WHITE)
     return img
 
 
